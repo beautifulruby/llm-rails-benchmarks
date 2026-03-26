@@ -1,0 +1,9 @@
+<div class="border border-gray-200 rounded-lg p-4 hover:shadow-md transition">
+  <%= link_to post_path(post) do %>
+    <h2 class="text-xl font-semibold text-gray-900 hover:text-blue-600"><%= post.title %></h2>
+  <% end %>
+  <p class="text-gray-600 mt-2"><%= truncate(post.body, length: 150) %></p>
+  <div class="mt-4 text-sm text-gray-500">
+    By <%= post.user.name %> &middot; <%= time_ago_in_words(post.created_at) %> ago
+  </div>
+</div>

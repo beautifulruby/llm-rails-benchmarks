@@ -1,0 +1,16 @@
+<div class="max-w-4xl mx-auto px-4 py-8">
+  <div class="flex justify-between items-center mb-8">
+    <h1 class="text-3xl font-bold text-gray-900">Posts</h1>
+    <%= link_to "New Post", new_post_path, class: "bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700" %>
+  </div>
+
+  <% if @posts.any? %>
+    <div class="space-y-4">
+      <% @posts.each do |post| %>
+        <%= render "post_card", post: post %>
+      <% end %>
+    </div>
+  <% else %>
+    <p class="text-gray-500">No posts yet. Create your first one!</p>
+  <% end %>
+</div>

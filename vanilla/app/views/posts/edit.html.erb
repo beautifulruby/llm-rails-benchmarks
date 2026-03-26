@@ -1,0 +1,9 @@
+<div class="max-w-4xl mx-auto px-4 py-8">
+  <div class="mb-6">
+    <%= link_to "&larr; Back to post".html_safe, @post, class: "text-blue-600 hover:underline" %>
+  </div>
+
+  <h1 class="text-3xl font-bold text-gray-900 mb-8">Edit Post</h1>
+
+  <%= render "form", post: @post %>
+</div>

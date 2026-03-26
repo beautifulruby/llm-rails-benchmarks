@@ -1,0 +1,32 @@
+# Ignore database files
+*.sqlite3
+*.sqlite3-*
+
+# Ignore logs
+*/log/*
+!*/log/.keep
+
+# Ignore tmp
+*/tmp/*
+!*/tmp/.keep
+
+# Ignore storage
+*/storage/*
+!*/storage/.keep
+
+# Ignore node_modules
+*/node_modules/
+
+# Ignore environment variables
+*/.env*
+
+# Ignore bundler
+*/.bundle/
+*/vendor/bundle/
+
+# Ignore master key
+*/config/master.key
+*/config/credentials/*.key
+
+# Ignore pid files
+*.pid
