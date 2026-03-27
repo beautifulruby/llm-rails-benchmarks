@@ -41,6 +41,15 @@ class Comment < ApplicationRecord
     moderation_status == "rejected"
   end
 
+  def edited?
+    edited_at.present?
+  end
+
+  def editable_by?(user)
+    return false unless user
+    user.admin? || user == self.user
+  end
+
   def visible_to?(user)
     return true if approved?
     return true if user&.admin?

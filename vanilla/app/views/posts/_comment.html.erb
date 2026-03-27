@@ -5,6 +5,9 @@
     <div class="flex justify-between items-start mb-2">
       <div class="text-sm text-gray-500">
         <strong><%= comment.user.name %></strong> &middot; <%= time_ago_in_words(comment.created_at) %> ago
+        <% if comment.edited? %>
+          <span class="text-gray-400 text-xs ml-1">(edited <%= time_ago_in_words(comment.edited_at) %> ago)</span>
+        <% end %>
         <% if comment.pending? %>
           <span class="bg-yellow-200 text-yellow-800 px-2 py-1 rounded text-xs ml-2">Pending</span>
         <% elsif comment.rejected? %>
@@ -18,11 +21,28 @@
           <%= button_to "Reject", reject_post_comment_path(post, comment), method: :patch,
               class: "text-red-600 text-sm hover:underline" %>
         <% end %>
+        <% if comment.editable_by?(current_user) %>
+          <button onclick="toggleEditForm(<%= comment.id %>)"
+                  class="text-blue-500 text-sm hover:underline">Edit</button>
+        <% end %>
         <button onclick="confirmDelete(<%= comment.id %>, '<%= j comment.excerpt(30) %>')"
                 class="text-red-500 text-sm hover:underline">Delete</button>
       </div>
     </div>
-    <p class="mt-2 text-gray-700"><%= comment.body %></p>
+    <div id="comment-body-<%= comment.id %>">
+      <p class="mt-2 text-gray-700"><%= comment.body %></p>
+    </div>
+    <div id="edit-form-<%= comment.id %>" class="mt-2 hidden">
+      <%= form_with model: [post, comment], method: :patch, class: "space-y-4" do |f| %>
+        <%= f.text_area :body, rows: 3,
+            class: "w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent" %>
+        <div class="flex gap-2">
+          <%= f.submit "Update Comment", class: "bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 cursor-pointer" %>
+          <button type="button" onclick="toggleEditForm(<%= comment.id %>)"
+                  class="bg-gray-300 text-gray-700 px-4 py-2 rounded hover:bg-gray-400">Cancel</button>
+        </div>
+      <% end %>
+    </div>
 
     <% if depth < 2 %>
       <button onclick="toggleReplyForm(<%= comment.id %>)" class="text-blue-600 text-sm hover:underline mt-3">

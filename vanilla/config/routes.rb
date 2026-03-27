@@ -1,6 +1,6 @@
 Rails.application.routes.draw do
   resources :posts do
-    resources :comments, only: [:create, :destroy] do
+    resources :comments, only: [:create, :update, :destroy] do
       member do
         patch :approve
         patch :reject

@@ -113,4 +113,42 @@ class CommentsControllerTest < ActionDispatch::IntegrationTest
     assert_not Comment.exists?(reply1.id)
     assert_not Comment.exists?(reply2.id)
   end
+
+  test "should update comment by author" do
+    # current_user in tests is User.first (created by first_or_create in ApplicationController)
+    comment_author = User.first_or_create!(name: "Demo User", email: "demo@example.com")
+    comment = Comment.create!(body: "Original text", user: comment_author, post: @post)
+
+    patch post_comment_url(@post, comment), params: { comment: { body: "Updated text" } }
+
+    assert_redirected_to post_path(@post)
+    comment.reload
+    assert_equal "Updated text", comment.body
+    assert_not_nil comment.edited_at
+  end
+
+  test "should update comment by admin" do
+    # Make sure current_user (Demo User) is an admin
+    demo_user = User.first_or_create!(name: "Demo User", email: "demo@example.com")
+    demo_user.update!(admin: true)
+
+    comment = Comment.create!(body: "Original text", user: @user, post: @post)
+
+    patch post_comment_url(@post, comment), params: { comment: { body: "Admin updated" } }
+
+    assert_redirected_to post_path(@post)
+    comment.reload
+    assert_equal "Admin updated", comment.body
+    assert_not_nil comment.edited_at
+  end
+
+  test "should not update comment without body" do
+    comment = Comment.create!(body: "Original text", user: @user, post: @post)
+
+    patch post_comment_url(@post, comment), params: { comment: { body: "" } }
+
+    assert_redirected_to post_path(@post)
+    comment.reload
+    assert_equal "Original text", comment.body
+  end
 end

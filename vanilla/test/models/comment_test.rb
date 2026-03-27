@@ -217,4 +217,37 @@ class CommentTest < ActiveSupport::TestCase
     assert_not_includes visible, pending
     assert_not_includes visible, rejected
   end
+
+  test "edited? returns false for new comment" do
+    comment = Comment.create!(body: "Test", user: @user, post: @post)
+    assert_not comment.edited?
+  end
+
+  test "edited? returns true when edited_at is set" do
+    comment = Comment.create!(body: "Test", user: @user, post: @post)
+    comment.update!(edited_at: Time.current)
+    assert comment.edited?
+  end
+
+  test "editable_by? returns true for comment author" do
+    comment = Comment.create!(body: "Test", user: @user, post: @post)
+    assert comment.editable_by?(@user)
+  end
+
+  test "editable_by? returns true for admin" do
+    comment = Comment.create!(body: "Test", user: @user, post: @post)
+    admin = User.create!(name: "Admin", email: "admin@example.com", admin: true)
+    assert comment.editable_by?(admin)
+  end
+
+  test "editable_by? returns false for other users" do
+    comment = Comment.create!(body: "Test", user: @user, post: @post)
+    other_user = User.create!(name: "Other", email: "other@example.com")
+    assert_not comment.editable_by?(other_user)
+  end
+
+  test "editable_by? returns false for nil user" do
+    comment = Comment.create!(body: "Test", user: @user, post: @post)
+    assert_not comment.editable_by?(nil)
+  end
 end

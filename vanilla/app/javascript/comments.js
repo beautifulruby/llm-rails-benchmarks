@@ -7,6 +7,15 @@ window.toggleReplyForm = function(commentId) {
   }
 };
 
+window.toggleEditForm = function(commentId) {
+  const body = document.getElementById(`comment-body-${commentId}`);
+  const form = document.getElementById(`edit-form-${commentId}`);
+  if (body && form) {
+    body.classList.toggle('hidden');
+    form.classList.toggle('hidden');
+  }
+};
+
 window.confirmDelete = function(commentId, excerpt) {
   const confirmation = prompt(`To delete this comment, type the following text:\n\n"${excerpt}"`);
 
