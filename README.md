@@ -2,6 +2,37 @@
 
 **Hypothesis:** Co-located code (Phlex views in controllers) enables faster AI-assisted feature development than traditional Rails (ERB views in separate files).
 
+## Background
+
+This experiment originated from comparing two production Rails apps:
+
+- **Garry's List (GL):** 185 services, 104 models, 89 jobs, 658-line routes.rb with ~150 custom member actions
+- **OpenGraphPlus (OGP):** ~25 models, ~6 jobs, 220-line routes.rb with everything as resources
+
+### Key Architectural Differences Observed
+
+| Pattern | Garry's List | OpenGraphPlus |
+|---------|--------------|---------------|
+| Views | ERB in `app/views/` | Phlex classes in controller files |
+| Routes | Custom actions (`post :approve`) | Nested resources (`resource :approval`) |
+| Frontend | Stimulus controllers | Inline JS with `onclick: safe()` |
+| State | Stimulus + Turbo Streams | Turbo Page Refreshes (morphing) |
+| Controllers | 1,326 lines (admin/posts) | 120 lines (includes model + views) |
+| Commit size | Avg 475 insertions | Avg 103 insertions (4.6x smaller) |
+
+### Estimated Token Efficiency for AI
+
+When an AI needs to understand a feature:
+
+| Metric | Traditional (GL-style) | Co-located (OGP-style) |
+|--------|------------------------|------------------------|
+| Files to read | 10-15 | 1-2 |
+| Tokens per feature | ~58,000 | ~1,950 |
+| Tool calls | 12-15 | 2-3 |
+| **Efficiency gain** | baseline | **29.7x fewer tokens** |
+
+This experiment aims to empirically validate these estimates.
+
 ## The Experiment
 
 Two identical Rails apps. Same feature. Different architectures. Measured results.
