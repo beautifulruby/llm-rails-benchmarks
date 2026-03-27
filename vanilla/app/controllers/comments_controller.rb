@@ -15,8 +15,12 @@ class CommentsController < ApplicationController
 
   def destroy
     if params[:confirmation] == @comment.excerpt(30)
+      comment_id = @comment.id
       @comment.destroy
-      redirect_to @post, notice: "Comment was successfully deleted."
+      respond_to do |format|
+        format.turbo_stream { render turbo_stream: turbo_stream.remove("comment-#{comment_id}") }
+        format.html { redirect_to @post, notice: "Comment was successfully deleted." }
+      end
     else
       redirect_to @post, alert: "Confirmation text did not match. Comment was not deleted."
     end

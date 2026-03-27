@@ -93,4 +93,24 @@ class CommentsControllerTest < ActionDispatch::IntegrationTest
     assert_redirected_to post_path(@post)
     assert comment.reload.rejected?
   end
+
+  test "should remove comment from DOM immediately via turbo stream" do
+    parent = Comment.create!(body: "Parent comment", user: @user, post: @post)
+    reply1 = Comment.create!(body: "Reply 1", user: @user, post: @post, parent: parent)
+    reply2 = Comment.create!(body: "Reply 2", user: @user, post: @post, parent: parent)
+    excerpt = parent.excerpt(30)
+
+    delete post_comment_url(@post, parent),
+           params: { confirmation: excerpt },
+           headers: { "Accept" => "text/vnd.turbo-stream.html" }
+
+    assert_response :success
+    assert_equal "text/vnd.turbo-stream.html; charset=utf-8", response.content_type
+    assert_match /turbo-stream.*action="remove".*target="comment-#{parent.id}"/, response.body
+
+    # Verify cascade deletion
+    assert_not Comment.exists?(parent.id)
+    assert_not Comment.exists?(reply1.id)
+    assert_not Comment.exists?(reply2.id)
+  end
 end
