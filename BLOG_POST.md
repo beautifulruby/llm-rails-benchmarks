@@ -142,9 +142,21 @@ The Phlex Ruby DSL is significantly more verbose than ERB for HTML markup. Addin
 
 Each experiment was run exactly once per architecture. No statistical significance is possible. These results could be noise. A rigorous study would run each experiment 10-30 times and measure variance.
 
-### 2. Same AI, Same Session
+### 2. Sub-Agent Architecture Limitations
 
-All agents were Claude instances from the same model version, running in the same session context. Different models (GPT-4, Gemini, open-source) might show different patterns. The agents also shared some ambient context from earlier in the session.
+I didn't run these as independent AI sessions. I used Claude's Task tool to spawn "sub-agents" from within a parent conversation. This introduces several problems:
+
+**Shared context bleeding:** The sub-agents inherit some context from the parent session. They knew this was a "benchmark experiment," which could affect their behavior (trying harder, being more thorough, etc.). A true test would use completely independent sessions with no knowledge of being tested.
+
+**Cross-contamination:** In one experiment (2A), the Phlex sub-agent accidentally ran `git checkout vanilla/` and reverted the Vanilla agent's changes. I had to manually re-apply them. The agents were nominally independent but operated on the same filesystem.
+
+**Coordination overhead:** I was orchestrating both agents, deciding when to launch them, collecting their outputs, and committing their changes. My decisions about how to prompt them, when to intervene, and how to measure results all introduce experimenter bias.
+
+**Token estimates are rough:** I reported "~2.7M tokens" for the greenfield experiment, but this came from the Task tool's summary, not precise API logs. Sub-agents don't expose exact token counts. The real numbers could be significantly different.
+
+**Not reproducible as-is:** You can't clone this repo and re-run "the same experiment" because the sub-agent orchestration happened in my specific Claude Code session. The prompts are documented, but the exact execution environment isn't reproducible.
+
+**Different behavior than fresh sessions:** Sub-agents may behave differently than a fresh `claude` CLI session. They have access to conversation history, tool results from earlier in the session, and potentially different system prompts. This is not the same as "give a fresh AI this codebase."
 
 ### 3. Identical Prompts ≠ Identical Tasks
 
