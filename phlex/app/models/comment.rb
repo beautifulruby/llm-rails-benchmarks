@@ -13,6 +13,28 @@ class Comment < ApplicationRecord
   scope :rejected, -> { where(status: "rejected") }
   scope :root_comments, -> { where(parent_id: nil) }
 
+  # Visibility rules:
+  # - Approved: visible to everyone
+  # - Pending: visible to admins and comment author
+  # - Rejected: visible only to admins
+  def visible_to?(user, is_admin:)
+    return true if is_admin
+    return true if status == "approved"
+    return true if status == "pending" && user && user.id == user_id
+    false
+  end
+
+  # Scope to get comments visible to a specific user
+  def self.visible_to(user, is_admin:)
+    if is_admin
+      all
+    elsif user
+      where("status = ? OR (status = ? AND user_id = ?)", "approved", "pending", user.id)
+    else
+      approved
+    end
+  end
+
   def depth
     parent ? parent.depth + 1 : 0
   end

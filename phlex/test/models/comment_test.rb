@@ -103,4 +103,65 @@ class CommentTest < ActiveSupport::TestCase
     excerpt = comment.excerpt(50)
     assert_equal "Short", excerpt
   end
+
+  test "approved comments should be visible to everyone" do
+    comment = comments(:root_comment) # approved
+    assert comment.visible_to?(nil, is_admin: false)
+    assert comment.visible_to?(users(:one), is_admin: false)
+    assert comment.visible_to?(users(:two), is_admin: false)
+    assert comment.visible_to?(users(:one), is_admin: true)
+  end
+
+  test "pending comments should be visible to admin and author only" do
+    comment = comments(:pending_comment) # pending, user: two
+
+    # Not visible to non-admin non-author
+    assert_not comment.visible_to?(nil, is_admin: false)
+    assert_not comment.visible_to?(users(:one), is_admin: false)
+
+    # Visible to author
+    assert comment.visible_to?(users(:two), is_admin: false)
+
+    # Visible to admin
+    assert comment.visible_to?(users(:one), is_admin: true)
+  end
+
+  test "rejected comments should be visible to admin only" do
+    comment = comments(:rejected_comment) # rejected, user: two
+
+    # Not visible to non-admin (even author)
+    assert_not comment.visible_to?(nil, is_admin: false)
+    assert_not comment.visible_to?(users(:two), is_admin: false)
+    assert_not comment.visible_to?(users(:one), is_admin: false)
+
+    # Visible to admin
+    assert comment.visible_to?(users(:one), is_admin: true)
+  end
+
+  test "visible_to scope returns all comments for admin" do
+    visible = Comment.visible_to(users(:one), is_admin: true)
+    assert_equal Comment.count, visible.count
+  end
+
+  test "visible_to scope returns approved comments for non-logged-in users" do
+    visible = Comment.visible_to(nil, is_admin: false)
+    assert_equal Comment.approved.count, visible.count
+    assert_includes visible, comments(:root_comment)
+    assert_not_includes visible, comments(:pending_comment)
+    assert_not_includes visible, comments(:rejected_comment)
+  end
+
+  test "visible_to scope returns approved and own pending comments for logged-in users" do
+    visible = Comment.visible_to(users(:two), is_admin: false)
+
+    # Should include all approved comments
+    assert_includes visible, comments(:root_comment)
+    assert_includes visible, comments(:reply_level_1)
+
+    # Should include own pending comment
+    assert_includes visible, comments(:pending_comment)
+
+    # Should NOT include rejected comment (even though it's user two's)
+    assert_not_includes visible, comments(:rejected_comment)
+  end
 end

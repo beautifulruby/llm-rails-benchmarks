@@ -133,8 +133,8 @@ class PostsController < ApplicationController
     end
 
     def view_template
-      # Skip rendering if comment is not approved and user is not admin
-      return unless @comment.status == "approved" || view_context.admin?
+      # Skip rendering if comment is not visible to current user
+      return unless @comment.visible_to?(view_context.current_user, is_admin: view_context.admin?)
 
       comment_id = "comment-#{@comment.id}"
 
@@ -210,7 +210,7 @@ class PostsController < ApplicationController
 
         # Replies section
         if @comment.replies.any?
-          visible_replies = view_context.admin? ? @comment.replies : @comment.replies.approved
+          visible_replies = @comment.replies.visible_to(view_context.current_user, is_admin: view_context.admin?)
           div(class: "mt-4 space-y-4", id: "replies-#{comment_id}") do
             visible_replies.each { |reply| render CommentView.new(comment: reply, post: @post, depth: @depth + 1) }
           end
@@ -308,12 +308,8 @@ class PostsController < ApplicationController
   end
 
   def show
-    # Show all root comments for admins, only approved for regular users
-    @comments = if admin?
-      @post.comments.includes(:user, :replies).root_comments
-    else
-      @post.comments.includes(:user, :replies).root_comments.approved
-    end
+    # Show comments based on visibility rules
+    @comments = @post.comments.includes(:user, :replies).root_comments.visible_to(current_user, is_admin: admin?)
     @comment = Comment.new
     render ShowView.new(post: @post, comments: @comments, comment: @comment)
   end

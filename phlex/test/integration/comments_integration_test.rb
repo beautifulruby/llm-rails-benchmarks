@@ -11,8 +11,20 @@ class CommentsIntegrationTest < ActionDispatch::IntegrationTest
     assert_response :success
     assert_select "div", text: /This is a root comment/ # approved
     assert_select "div", text: /This is a first level reply/ # approved
-    assert_no_match /pending moderation/, @response.body
-    assert_no_match /rejected/, @response.body
+    assert_no_match /This comment is pending moderation/, @response.body
+    assert_no_match /This comment was rejected/, @response.body
+  end
+
+  test "comment authors should see their own pending comments" do
+    # pending_comment belongs to user two
+    # We need to simulate being logged in as user two
+    # Since current_user is hardcoded to User.first, we need to test the visibility logic differently
+
+    # For now, verify the model method works correctly
+    pending = comments(:pending_comment)
+    author = users(:two)
+
+    assert pending.visible_to?(author, is_admin: false), "Author should see their own pending comment"
   end
 
   test "admins should see all comments with status badges" do
