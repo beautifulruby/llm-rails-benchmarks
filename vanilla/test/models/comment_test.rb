@@ -140,4 +140,81 @@ class CommentTest < ActiveSupport::TestCase
     assert_includes parent.replies, reply1
     assert_includes parent.replies, reply2
   end
+
+  test "visible_to? returns true for approved comments to anyone" do
+    comment = Comment.create!(body: "Test", user: @user, post: @post, moderation_status: "approved")
+    other_user = User.create!(name: "Other", email: "other@example.com")
+    admin = User.create!(name: "Admin", email: "admin@example.com", admin: true)
+
+    assert comment.visible_to?(nil)
+    assert comment.visible_to?(@user)
+    assert comment.visible_to?(other_user)
+    assert comment.visible_to?(admin)
+  end
+
+  test "visible_to? returns true for pending comments to author and admin" do
+    comment = Comment.create!(body: "Test", user: @user, post: @post, moderation_status: "pending")
+    other_user = User.create!(name: "Other", email: "other@example.com")
+    admin = User.create!(name: "Admin", email: "admin@example.com", admin: true)
+
+    assert_not comment.visible_to?(nil)
+    assert comment.visible_to?(@user) # author
+    assert_not comment.visible_to?(other_user)
+    assert comment.visible_to?(admin)
+  end
+
+  test "visible_to? returns true for rejected comments only to admin" do
+    comment = Comment.create!(body: "Test", user: @user, post: @post, moderation_status: "rejected")
+    other_user = User.create!(name: "Other", email: "other@example.com")
+    admin = User.create!(name: "Admin", email: "admin@example.com", admin: true)
+
+    assert_not comment.visible_to?(nil)
+    assert_not comment.visible_to?(@user) # even the author
+    assert_not comment.visible_to?(other_user)
+    assert comment.visible_to?(admin)
+  end
+
+  test "visible_to scope returns all comments for admin" do
+    Comment.delete_all
+    approved = Comment.create!(body: "Approved", user: @user, post: @post, moderation_status: "approved")
+    pending = Comment.create!(body: "Pending", user: @user, post: @post, moderation_status: "pending")
+    rejected = Comment.create!(body: "Rejected", user: @user, post: @post, moderation_status: "rejected")
+    admin = User.create!(name: "Admin", email: "admin@example.com", admin: true)
+
+    visible = Comment.visible_to(admin)
+    assert_equal 3, visible.count
+    assert_includes visible, approved
+    assert_includes visible, pending
+    assert_includes visible, rejected
+  end
+
+  test "visible_to scope returns approved comments and own pending for regular user" do
+    Comment.delete_all
+    other_user = User.create!(name: "Other", email: "other@example.com")
+
+    approved = Comment.create!(body: "Approved", user: @user, post: @post, moderation_status: "approved")
+    pending_by_user = Comment.create!(body: "Pending by user", user: @user, post: @post, moderation_status: "pending")
+    pending_by_other = Comment.create!(body: "Pending by other", user: other_user, post: @post, moderation_status: "pending")
+    rejected = Comment.create!(body: "Rejected", user: @user, post: @post, moderation_status: "rejected")
+
+    visible = Comment.visible_to(@user)
+    assert_equal 2, visible.count
+    assert_includes visible, approved
+    assert_includes visible, pending_by_user
+    assert_not_includes visible, pending_by_other
+    assert_not_includes visible, rejected
+  end
+
+  test "visible_to scope returns only approved comments for nil user" do
+    Comment.delete_all
+    approved = Comment.create!(body: "Approved", user: @user, post: @post, moderation_status: "approved")
+    pending = Comment.create!(body: "Pending", user: @user, post: @post, moderation_status: "pending")
+    rejected = Comment.create!(body: "Rejected", user: @user, post: @post, moderation_status: "rejected")
+
+    visible = Comment.visible_to(nil)
+    assert_equal 1, visible.count
+    assert_includes visible, approved
+    assert_not_includes visible, pending
+    assert_not_includes visible, rejected
+  end
 end

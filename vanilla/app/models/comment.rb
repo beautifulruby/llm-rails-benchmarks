@@ -41,6 +41,22 @@ class Comment < ApplicationRecord
     moderation_status == "rejected"
   end
 
+  def visible_to?(user)
+    return true if approved?
+    return true if user&.admin?
+    return true if pending? && user == self.user
+    false
+  end
+
+  def self.visible_to(user)
+    if user&.admin?
+      all
+    else
+      where(moderation_status: "approved")
+        .or(where(moderation_status: "pending", user_id: user&.id))
+    end
+  end
+
   private
 
   def maximum_nesting_depth

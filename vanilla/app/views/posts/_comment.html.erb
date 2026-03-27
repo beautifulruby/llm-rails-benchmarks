@@ -1,4 +1,4 @@
-<% visible_replies = current_user.admin? ? comment.replies : comment.replies.approved %>
+<% visible_replies = comment.replies.visible_to(current_user) %>
 
 <div class="<%= 'ml-8' if depth > 0 %> border-l-2 border-gray-200 pl-4" id="comment-<%= comment.id %>">
   <div class="bg-gray-50 rounded-lg p-4 <%= 'border-2 border-yellow-400' if comment.pending? %>">

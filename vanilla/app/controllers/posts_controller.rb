@@ -6,8 +6,7 @@ class PostsController < ApplicationController
   end
 
   def show
-    @comments = @post.comments.root_comments.includes(:user, replies: :user)
-    @comments = @comments.approved unless current_user.admin?
+    @comments = @post.comments.root_comments.includes(:user, replies: :user).visible_to(current_user)
     @comment = Comment.new
   end
 
