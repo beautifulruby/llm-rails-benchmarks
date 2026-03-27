@@ -25,8 +25,13 @@ class CommentsController < ApplicationController
       return
     end
 
+    comment_id = @comment.id
     @comment.destroy
-    redirect_to @post, notice: "Comment and all replies were successfully deleted."
+
+    respond_to do |format|
+      format.html { redirect_to @post, notice: "Comment and all replies were successfully deleted." }
+      format.turbo_stream { render turbo_stream: turbo_stream.remove("comment-#{comment_id}") }
+    end
   end
 
   def approve

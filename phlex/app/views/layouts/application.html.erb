@@ -79,6 +79,7 @@
           const newModal = document.getElementById('delete-modal-' + commentId);
           const form = document.getElementById('delete-form-' + commentId);
           form.action = window.location.pathname.split('?')[0] + '/comments/' + commentId.replace('comment-', '');
+          form.setAttribute('data-turbo', 'true');
 
           // Focus the input
           setTimeout(() => {
@@ -110,6 +111,18 @@
         if (e.key === 'Escape') {
           const modals = document.querySelectorAll('[id^="delete-modal-"]');
           modals.forEach(modal => modal.remove());
+        }
+      });
+
+      // Close modal after successful turbo form submission
+      document.addEventListener('turbo:submit-end', function(e) {
+        if (e.target.id && e.target.id.startsWith('delete-form-')) {
+          if (e.detail.success) {
+            const modal = e.target.closest('[id^="delete-modal-"]');
+            if (modal) {
+              modal.remove();
+            }
+          }
         }
       });
     </script>
