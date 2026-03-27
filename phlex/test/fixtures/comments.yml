@@ -1,13 +1,36 @@
 # Read about fixtures at https://api.rubyonrails.org/classes/ActiveRecord/FixtureSet.html
 
-one:
-  body: MyText
+root_comment:
+  body: This is a root comment
   user: one
   post: one
-  parent: one
+  parent: null
+  status: approved
 
-two:
-  body: MyText
+pending_comment:
+  body: This comment is pending moderation
   user: two
-  post: two
-  parent: two
+  post: one
+  parent: null
+  status: pending
+
+rejected_comment:
+  body: This comment was rejected
+  user: two
+  post: one
+  parent: null
+  status: rejected
+
+reply_level_1:
+  body: This is a first level reply
+  user: two
+  post: one
+  parent: root_comment
+  status: approved
+
+reply_level_2:
+  body: This is a second level reply
+  user: three
+  post: one
+  parent: reply_level_1
+  status: approved

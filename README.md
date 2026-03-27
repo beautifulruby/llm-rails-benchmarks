@@ -89,63 +89,97 @@ Add to both apps:
 
 ## Results
 
-### Vanilla Rails
+### Experiment 1: Greenfield Implementation (Parallel AI Agents)
 
+**Method:** Two parallel AI agents given identical prompts, no prior context about the codebase.
+
+**Prompt used:**
 ```
-Started: [timestamp]
-Finished: [timestamp]
-Duration: [X minutes]
+Add comment moderation to this Rails app. Requirements:
+1. Comments have status: pending (default), approved, rejected
+2. Only approved comments visible to regular users
+3. Admins see all comments with status badges
+4. Approve/reject buttons for admins
+5. Add tests
 
-Files created: [N]
-Files modified: [N]
-Lines added: [N]
-
-Tool calls:
-  Read: [N]
-  Edit: [N]
-  Write: [N]
-  Bash: [N]
-
-Input tokens: [N]
-Output tokens: [N]
-
-Test runs: [N]
-Failures before green: [N]
+Follow existing patterns. Do not ask clarifying questions.
 ```
 
-### Phlex Rails
+### Vanilla Rails (Greenfield)
 
 ```
-Started: [timestamp]
-Finished: [timestamp]
-Duration: [X minutes]
+Files modified: 13
+Lines added: 325
+Lines deleted: 52
+Net lines: +273
 
-Files created: [N]
-Files modified: [N]
-Lines added: [N]
+Files touched:
+  - app/controllers/application_controller.rb
+  - app/controllers/comments_controller.rb
+  - app/controllers/posts_controller.rb
+  - app/javascript/application.js
+  - app/models/comment.rb
+  - app/models/user.rb
+  - app/views/posts/_comment.html.erb
+  - config/routes.rb
+  - db/schema.rb
+  - db/seeds.rb
+  - test/fixtures/*.yml
+  - test/models/comment_test.rb
 
-Tool calls:
-  Read: [N]
-  Edit: [N]
-  Write: [N]
-  Bash: [N]
-
-Input tokens: [N]
-Output tokens: [N]
-
-Test runs: [N]
-Failures before green: [N]
+Total tokens: ~2.7M
+Tests: 34 assertions, all passing
 ```
 
-### Comparison
+### Phlex Rails (Greenfield)
 
-| Metric | Vanilla | Phlex | Ratio |
+```
+Files modified: 11
+Lines added: 434
+Lines deleted: 46
+Net lines: +388
+
+Files touched:
+  - app/controllers/comments_controller.rb
+  - app/controllers/posts_controller.rb
+  - app/models/comment.rb
+  - app/views/layouts/application.html.erb
+  - config/routes.rb
+  - db/schema.rb
+  - db/seeds.rb
+  - test/fixtures/*.yml
+  - test/models/comment_test.rb
+
+Total tokens: ~2.7M
+Tests: 36 assertions, all passing
+```
+
+### Greenfield Comparison
+
+| Metric | Vanilla | Phlex | Notes |
 |--------|---------|-------|-------|
-| Duration | | | |
-| Files touched | | | |
-| Lines of code | | | |
-| Input tokens | | | |
-| Tool calls | | | |
+| Files touched | 13 | 11 | -15% (2 fewer files) |
+| Lines added | 325 | 434 | +33% (Phlex DSL is verbose) |
+| Net lines | +273 | +388 | Phlex views inline = more code |
+| Total tokens | ~2.7M | ~2.7M | **No significant difference** |
+
+**Greenfield Conclusion:** For new feature implementation, both architectures performed similarly. The agents spent similar time on exploration, implementation, and testing. The hypothesized efficiency gain was NOT observed in greenfield development.
+
+**Why?** Greenfield implementation requires:
+1. Understanding requirements (same for both)
+2. Creating new code (Phlex actually requires more lines)
+3. Running tests and fixing issues (similar complexity)
+
+The efficiency hypothesis may apply more to **iterative development** where:
+- Developer needs to read existing code to understand it
+- Change requests require modifying multiple related files
+- Bug fixes require tracing through scattered code
+
+---
+
+## Experiment 2: Iterative Development (Planned)
+
+To test whether co-location helps with **modifying existing features**, not just building new ones.
 
 ## Running the Apps
 
@@ -268,4 +302,127 @@ Requirements:
 7. Add tests for all functionality
 
 Follow existing patterns in the codebase. Do not ask clarifying questions.
+```
+
+---
+
+## Iterative Development Experiments
+
+The greenfield experiment showed no significant difference. The real test is **modifying existing code** where co-location should reduce context-gathering overhead.
+
+### Iterative Experiment Design
+
+Each experiment:
+1. Start fresh AI session (no prior context)
+2. Give identical prompts to both apps
+3. Measure: files read, tool calls, tokens, time to completion
+
+### Experiment 2A: Bug Fix
+
+**Scenario:** User reports that deleting a parent comment doesn't properly cascade to children in the UI (children remain visible until page refresh).
+
+**Prompt:**
+```
+Bug report: When deleting a comment with replies, the replies remain visible
+until the page is refreshed. They should disappear immediately.
+
+Fix this bug. Add a test to prevent regression.
+```
+
+**Hypothesis:** Phlex wins because:
+- Fix requires understanding view rendering + delete action
+- Vanilla: read controller + view + stimulus + routes
+- Phlex: read posts_controller.rb (contains all context)
+
+### Experiment 2B: Feature Modification
+
+**Scenario:** Change moderation workflow - pending comments should show to their author (not just admins).
+
+**Prompt:**
+```
+Change the comment visibility rules:
+- Approved comments: visible to everyone
+- Pending comments: visible to admins AND the comment author
+- Rejected comments: visible only to admins
+
+Update tests accordingly.
+```
+
+**Hypothesis:** Phlex wins because:
+- Requires understanding: model scopes + view conditionals + controller filtering
+- Vanilla: scattered across model, controller, view partial
+- Phlex: model + posts_controller.rb (views inline)
+
+### Experiment 2C: UI Enhancement
+
+**Scenario:** Add "edit comment" functionality to existing comments.
+
+**Prompt:**
+```
+Add the ability to edit comments:
+- "Edit" button appears next to delete button
+- Clicking edit shows inline form (like reply form)
+- Only comment author can edit (and admins)
+- Edited comments show "(edited)" timestamp
+- Add tests
+
+Follow existing patterns.
+```
+
+**Hypothesis:** Phlex wins because:
+- Must understand existing patterns (reply form, permissions, UI structure)
+- Vanilla: read multiple view partials, stimulus controller, routes
+- Phlex: read one file to understand patterns, modify same file
+
+### Experiment 2D: Performance Investigation
+
+**Scenario:** Comments page is slow. Investigate and fix N+1 queries.
+
+**Prompt:**
+```
+The posts show page is slow when there are many comments.
+Profile the page, identify N+1 queries, and fix them.
+Show before/after query counts.
+```
+
+**Hypothesis:** Mixed results expected
+- N+1 detection requires model understanding (both similar)
+- Fix location depends on where eager loading is applied
+- May test whether co-location helps or hurts for db-layer work
+
+### Measurement Template (Iterative)
+
+```
+Experiment: [2A/2B/2C/2D]
+App: [vanilla/phlex]
+
+Files read before first edit: [N]
+Total files read: [N]
+Total files modified: [N]
+Lines changed: [N]
+
+Tool calls:
+  Read: [N]
+  Edit: [N]
+  Bash: [N]
+
+Tokens: [N]
+
+Time to first edit: [X min]
+Time to completion: [X min]
+Test runs: [N]
+```
+
+### Running Iterative Experiments
+
+```bash
+# Tag current state (post-greenfield)
+git tag post-greenfield
+
+# For each experiment:
+# 1. Create branch: git checkout -b experiment-2a-vanilla
+# 2. Start fresh Claude session
+# 3. Run prompt
+# 4. Record measurements
+# 5. Repeat for phlex
 ```

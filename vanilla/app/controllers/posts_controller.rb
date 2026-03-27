@@ -6,7 +6,8 @@ class PostsController < ApplicationController
   end
 
   def show
-    @comments = @post.comments.includes(:user, :replies).where(parent_id: nil)
+    @comments = @post.comments.root_comments.includes(:user, replies: :user)
+    @comments = @comments.approved unless current_user.admin?
     @comment = Comment.new
   end
 
@@ -50,9 +51,4 @@ class PostsController < ApplicationController
   def post_params
     params.require(:post).permit(:title, :body)
   end
-
-  def current_user
-    @current_user ||= User.first_or_create!(name: "Demo User", email: "demo@example.com")
-  end
-  helper_method :current_user
 end

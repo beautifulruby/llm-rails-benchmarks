@@ -5,4 +5,47 @@ class Comment < ApplicationRecord
   has_many :replies, class_name: "Comment", foreign_key: :parent_id, dependent: :destroy
 
   validates :body, presence: true
+  validates :moderation_status, inclusion: { in: %w[pending approved rejected] }
+  validate :maximum_nesting_depth
+
+  scope :approved, -> { where(moderation_status: "approved") }
+  scope :pending, -> { where(moderation_status: "pending") }
+  scope :rejected, -> { where(moderation_status: "rejected") }
+  scope :root_comments, -> { where(parent_id: nil) }
+
+  def depth
+    parent ? parent.depth + 1 : 0
+  end
+
+  def excerpt(length = 50)
+    body.truncate(length)
+  end
+
+  def approve!
+    update!(moderation_status: "approved")
+  end
+
+  def reject!
+    update!(moderation_status: "rejected")
+  end
+
+  def pending?
+    moderation_status == "pending"
+  end
+
+  def approved?
+    moderation_status == "approved"
+  end
+
+  def rejected?
+    moderation_status == "rejected"
+  end
+
+  private
+
+  def maximum_nesting_depth
+    if depth >= 3
+      errors.add(:parent_id, "comments can only be nested 3 levels deep")
+    end
+  end
 end

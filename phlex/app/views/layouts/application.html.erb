@@ -21,6 +21,98 @@
     <%# Includes all stylesheet files in app/assets/stylesheets %>
     <%= stylesheet_link_tag :app, "data-turbo-track": "reload" %>
     <%= javascript_importmap_tags %>
+    <script>
+      // Event delegation for toggle replies
+      document.addEventListener('click', function(e) {
+        if (e.target.classList.contains('toggle-replies')) {
+          const commentId = e.target.dataset.commentId;
+          const repliesDiv = document.getElementById('replies-' + commentId);
+          const toggleBtn = e.target;
+
+          if (repliesDiv.style.display === 'none') {
+            repliesDiv.style.display = 'block';
+            const replyCount = repliesDiv.querySelectorAll('[id^="comment-"]').length;
+            toggleBtn.textContent = 'Collapse (' + replyCount + ')';
+          } else {
+            repliesDiv.style.display = 'none';
+            const replyCount = repliesDiv.querySelectorAll('[id^="comment-"]').length;
+            toggleBtn.textContent = 'Expand (' + replyCount + ')';
+          }
+        }
+      });
+
+      // Event delegation for delete comment
+      document.addEventListener('click', function(e) {
+        if (e.target.classList.contains('delete-comment')) {
+          const commentId = e.target.dataset.commentId;
+          const expectedExcerpt = e.target.dataset.commentExcerpt;
+
+          const modal = document.getElementById('delete-modal-' + commentId);
+          if (modal) {
+            modal.remove();
+          }
+
+          const modalHtml = `
+            <div id="delete-modal-${commentId}" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+              <div class="bg-white rounded-lg p-6 max-w-md w-full mx-4">
+                <h3 class="text-xl font-bold text-gray-900 mb-4">Confirm Deletion</h3>
+                <p class="text-gray-700 mb-4">This will delete the comment and all its replies. To confirm, type the following excerpt:</p>
+                <p class="bg-gray-100 p-3 rounded text-sm mb-4 font-mono">${expectedExcerpt}</p>
+                <form id="delete-form-${commentId}" method="post">
+                  <input type="hidden" name="_method" value="delete">
+                  <input type="hidden" name="authenticity_token" value="${document.querySelector('meta[name="csrf-token"]')?.content}">
+                  <input type="text" name="comment_excerpt" id="excerpt-input-${commentId}"
+                    class="w-full border border-gray-300 rounded-lg px-4 py-2 mb-4 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    placeholder="Type the excerpt to confirm">
+                  <div class="flex gap-3 justify-end">
+                    <button type="button" class="cancel-delete-modal px-4 py-2 text-gray-600 hover:text-gray-800" data-comment-id="${commentId}">Cancel</button>
+                    <button type="submit" class="bg-red-600 text-white px-4 py-2 rounded hover:bg-red-700">Delete</button>
+                  </div>
+                </form>
+              </div>
+            </div>
+          `;
+
+          document.body.insertAdjacentHTML('beforeend', modalHtml);
+
+          // Store the delete URL
+          const newModal = document.getElementById('delete-modal-' + commentId);
+          const form = document.getElementById('delete-form-' + commentId);
+          form.action = window.location.pathname.split('?')[0] + '/comments/' + commentId.replace('comment-', '');
+
+          // Focus the input
+          setTimeout(() => {
+            document.getElementById('excerpt-input-' + commentId)?.focus();
+          }, 100);
+
+          // Handle backdrop click
+          newModal.addEventListener('click', function(event) {
+            if (event.target === newModal) {
+              newModal.remove();
+            }
+          });
+        }
+      });
+
+      // Event delegation for cancel delete modal
+      document.addEventListener('click', function(e) {
+        if (e.target.classList.contains('cancel-delete-modal')) {
+          const commentId = e.target.dataset.commentId;
+          const modal = document.getElementById('delete-modal-' + commentId);
+          if (modal) {
+            modal.remove();
+          }
+        }
+      });
+
+      // Close modal on Escape key
+      document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape') {
+          const modals = document.querySelectorAll('[id^="delete-modal-"]');
+          modals.forEach(modal => modal.remove());
+        }
+      });
+    </script>
   </head>
 
   <body>

@@ -4,10 +4,12 @@ one:
   body: MyText
   user: one
   post: one
-  parent: one
+  parent: null
+  moderation_status: approved
 
 two:
   body: MyText
   user: two
   post: two
-  parent: two
+  parent: null
+  moderation_status: approved

@@ -42,7 +42,7 @@ class PostsController < ApplicationController
         end
         p(class: "text-gray-600 mt-2") { @post.body.truncate(150) }
         div(class: "mt-4 text-sm text-gray-500") do
-          plain "By #{@post.user.name} · #{helpers.time_ago_in_words(@post.created_at)} ago"
+          plain "By #{@post.user.name} · #{view_context.time_ago_in_words(@post.created_at)} ago"
         end
       end
     end
@@ -64,7 +64,7 @@ class PostsController < ApplicationController
         article(class: "mb-8") do
           h1(class: "text-3xl font-bold text-gray-900 mb-4") { @post.title }
           div(class: "text-sm text-gray-500 mb-6") do
-            plain "By #{@post.user.name} · #{helpers.time_ago_in_words(@post.created_at)} ago"
+            plain "By #{@post.user.name} · #{view_context.time_ago_in_words(@post.created_at)} ago"
           end
           div(class: "prose prose-gray max-w-none") do
             @post.body.split("\n\n").each { |para| p { para } }
@@ -80,7 +80,15 @@ class PostsController < ApplicationController
         hr(class: "my-8")
 
         section do
-          h2(class: "text-2xl font-bold text-gray-900 mb-6") { "Comments (#{@post.comments.count})" }
+          approved_count = @post.comments.approved.count
+          total_count = @post.comments.count
+          h2(class: "text-2xl font-bold text-gray-900 mb-6") do
+            if view_context.admin?
+              "Comments (#{approved_count} approved / #{total_count} total)"
+            else
+              "Comments (#{approved_count})"
+            end
+          end
           render CommentForm.new(post: @post, comment: @comment)
 
           div(class: "mt-8 space-y-6") do
@@ -100,7 +108,7 @@ class PostsController < ApplicationController
 
     def view_template
       form(action: post_comments_path(@post), method: "post", class: "space-y-4") do
-        input(type: "hidden", name: "authenticity_token", value: helpers.form_authenticity_token)
+        input(type: "hidden", name: "authenticity_token", value: view_context.form_authenticity_token)
         input(type: "hidden", name: "comment[parent_id]", value: @parent_id) if @parent_id
 
         div do
@@ -125,19 +133,72 @@ class PostsController < ApplicationController
     end
 
     def view_template
+      # Skip rendering if comment is not approved and user is not admin
+      return unless @comment.status == "approved" || view_context.admin?
+
+      comment_id = "comment-#{@comment.id}"
+
       div(class: "#{@depth > 0 ? 'ml-8' : ''} border-l-2 border-gray-200 pl-4") do
         div(class: "bg-gray-50 rounded-lg p-4") do
+          # Header with user info, status badge, and actions
           div(class: "flex justify-between items-start") do
-            div(class: "text-sm text-gray-500") do
-              strong { @comment.user.name }
-              plain " · #{helpers.time_ago_in_words(@comment.created_at)} ago"
+            div(class: "flex items-center gap-2") do
+              div(class: "text-sm text-gray-500") do
+                strong { @comment.user.name }
+                plain " · #{view_context.time_ago_in_words(@comment.created_at)} ago"
+              end
+
+              # Status badge for admins
+              if view_context.admin?
+                case @comment.status
+                when "pending"
+                  span(class: "px-2 py-1 text-xs font-semibold text-yellow-800 bg-yellow-100 rounded") { "Pending" }
+                when "rejected"
+                  span(class: "px-2 py-1 text-xs font-semibold text-red-800 bg-red-100 rounded") { "Rejected" }
+                when "approved"
+                  span(class: "px-2 py-1 text-xs font-semibold text-green-800 bg-green-100 rounded") { "Approved" }
+                end
+              end
             end
-            a(href: post_comment_path(@post, @comment), data: { turbo_method: :delete, turbo_confirm: "Delete this comment?" },
-              class: "text-red-500 text-sm hover:underline") { "Delete" }
+
+            # Action buttons
+            div(class: "flex gap-3 items-center") do
+              # Collapse/expand for threads with replies
+              if @comment.replies.any?
+                button(
+                  class: "text-gray-500 text-sm hover:underline toggle-replies",
+                  id: "toggle-btn-#{comment_id}",
+                  data: { comment_id: comment_id }
+                ) { "Collapse (#{@comment.replies.count})" }
+              end
+
+              # Moderation buttons (admin only)
+              if view_context.admin?
+                if @comment.status == "pending"
+                  a(href: approve_post_comment_path(@post, @comment),
+                    data: { turbo_method: :patch },
+                    class: "text-green-600 text-sm hover:underline") { "Approve" }
+                  a(href: reject_post_comment_path(@post, @comment),
+                    data: { turbo_method: :patch },
+                    class: "text-yellow-600 text-sm hover:underline") { "Reject" }
+                end
+              end
+
+              # Delete with confirmation
+              button(
+                class: "text-red-500 text-sm hover:underline delete-comment",
+                data: {
+                  comment_id: comment_id,
+                  comment_excerpt: @comment.excerpt(50)
+                }
+              ) { "Delete" }
+            end
           end
+
           p(class: "mt-2 text-gray-700") { @comment.body }
 
-          if @depth < 3
+          # Reply form (only for approved comments or admins, and if depth < 2)
+          if (@comment.status == "approved" || view_context.admin?) && @depth < 2
             details(class: "mt-3") do
               summary(class: "text-blue-600 text-sm cursor-pointer hover:underline") { "Reply" }
               div(class: "mt-2") do
@@ -147,9 +208,11 @@ class PostsController < ApplicationController
           end
         end
 
+        # Replies section
         if @comment.replies.any?
-          div(class: "mt-4 space-y-4") do
-            @comment.replies.each { |reply| render CommentView.new(comment: reply, post: @post, depth: @depth + 1) }
+          visible_replies = view_context.admin? ? @comment.replies : @comment.replies.approved
+          div(class: "mt-4 space-y-4", id: "replies-#{comment_id}") do
+            visible_replies.each { |reply| render CommentView.new(comment: reply, post: @post, depth: @depth + 1) }
           end
         end
       end
@@ -245,7 +308,12 @@ class PostsController < ApplicationController
   end
 
   def show
-    @comments = @post.comments.includes(:user, :replies).where(parent_id: nil)
+    # Show all root comments for admins, only approved for regular users
+    @comments = if admin?
+      @post.comments.includes(:user, :replies).root_comments
+    else
+      @post.comments.includes(:user, :replies).root_comments.approved
+    end
     @comment = Comment.new
     render ShowView.new(post: @post, comments: @comments, comment: @comment)
   end
@@ -297,4 +365,10 @@ class PostsController < ApplicationController
     @current_user ||= User.first_or_create!(name: "Demo User", email: "demo@example.com")
   end
   helper_method :current_user
+
+  def admin?
+    # Simple admin check - in production, this would check actual user roles
+    params[:admin] == "true" || session[:admin] == true
+  end
+  helper_method :admin?
 end
