@@ -125,6 +125,40 @@
           }
         }
       });
+
+      // Event delegation for edit comment
+      document.addEventListener('click', function(e) {
+        if (e.target.classList.contains('edit-comment')) {
+          const commentId = e.target.dataset.commentId;
+          const commentIdNum = commentId.replace('comment-', '');
+
+          // Hide comment body and show edit form
+          const bodyDiv = document.querySelector('.comment-body-' + commentIdNum);
+          const editFormDiv = document.querySelector('.comment-edit-form-' + commentIdNum);
+
+          if (bodyDiv && editFormDiv) {
+            bodyDiv.style.display = 'none';
+            editFormDiv.style.display = 'block';
+          }
+        }
+      });
+
+      // Event delegation for cancel edit
+      document.addEventListener('click', function(e) {
+        if (e.target.classList.contains('cancel-edit')) {
+          const commentId = e.target.dataset.commentId;
+          const commentIdNum = commentId.replace('comment-', '');
+
+          // Show comment body and hide edit form
+          const bodyDiv = document.querySelector('.comment-body-' + commentIdNum);
+          const editFormDiv = document.querySelector('.comment-edit-form-' + commentIdNum);
+
+          if (bodyDiv && editFormDiv) {
+            bodyDiv.style.display = 'block';
+            editFormDiv.style.display = 'none';
+          }
+        }
+      });
     </script>
   </head>
 

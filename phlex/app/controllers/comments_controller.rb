@@ -2,7 +2,8 @@
 
 class CommentsController < ApplicationController
   before_action :set_post
-  before_action :set_comment, only: [:destroy, :approve, :reject]
+  before_action :set_comment, only: [:edit, :update, :destroy, :approve, :reject]
+  before_action :authorize_edit, only: [:edit, :update]
 
   def create
     @comment = @post.comments.build(comment_params)
@@ -50,6 +51,19 @@ class CommentsController < ApplicationController
     end
   end
 
+  def edit
+    # Not implementing turbo stream for edit - simpler to handle with inline form toggle via JS
+    redirect_to @post
+  end
+
+  def update
+    if @comment.update(comment_params.merge(edited_at: Time.current))
+      redirect_to @post, notice: "Comment was successfully updated."
+    else
+      redirect_to @post, alert: "Failed to update comment: #{@comment.errors.full_messages.join(', ')}"
+    end
+  end
+
   private
 
   def set_post
@@ -73,4 +87,10 @@ class CommentsController < ApplicationController
     params[:admin] == "true" || session[:admin] == true
   end
   helper_method :admin?
+
+  def authorize_edit
+    unless @comment.user_id == current_user.id || admin?
+      redirect_to @post, alert: "You are not authorized to edit this comment."
+    end
+  end
 end

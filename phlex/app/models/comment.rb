@@ -43,6 +43,12 @@ class Comment < ApplicationRecord
     body.truncate(length)
   end
 
+  def editable_by?(user, is_admin:)
+    return true if is_admin
+    return true if user && user.id == user_id
+    false
+  end
+
   private
 
   def maximum_nesting_depth

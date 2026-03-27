@@ -164,4 +164,25 @@ class CommentTest < ActiveSupport::TestCase
     # Should NOT include rejected comment (even though it's user two's)
     assert_not_includes visible, comments(:rejected_comment)
   end
+
+  test "editable_by? should return true for comment author" do
+    comment = comments(:root_comment) # belongs to user one
+
+    assert comment.editable_by?(users(:one), is_admin: false)
+    assert_not comment.editable_by?(users(:two), is_admin: false)
+  end
+
+  test "editable_by? should return true for admin" do
+    comment = comments(:pending_comment) # belongs to user two
+
+    assert comment.editable_by?(users(:one), is_admin: true)
+    assert comment.editable_by?(users(:two), is_admin: true)
+  end
+
+  test "editable_by? should return false for non-author non-admin" do
+    comment = comments(:root_comment) # belongs to user one
+
+    assert_not comment.editable_by?(users(:two), is_admin: false)
+    assert_not comment.editable_by?(nil, is_admin: false)
+  end
 end

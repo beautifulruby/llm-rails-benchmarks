@@ -125,6 +125,37 @@ class PostsController < ApplicationController
     end
   end
 
+  class EditCommentForm < Views::Base
+    def initialize(post:, comment:)
+      @post = post
+      @comment = comment
+    end
+
+    def view_template
+      form(action: post_comment_path(@post, @comment), method: "post", class: "space-y-4", id: "edit-form-#{@comment.id}") do
+        input(type: "hidden", name: "authenticity_token", value: view_context.form_authenticity_token)
+        input(type: "hidden", name: "_method", value: "patch")
+
+        div do
+          textarea(name: "comment[body]", rows: 3,
+            class: "w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent") do
+            @comment.body
+          end
+        end
+
+        div(class: "flex gap-2") do
+          button(type: "submit", class: "bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 cursor-pointer") do
+            "Update Comment"
+          end
+          button(type: "button", class: "cancel-edit text-gray-600 px-4 py-2 rounded hover:bg-gray-100 cursor-pointer",
+            data: { comment_id: "comment-#{@comment.id}" }) do
+            "Cancel"
+          end
+        end
+      end
+    end
+  end
+
   class CommentView < Views::Base
     def initialize(comment:, post:, depth:)
       @comment = comment
@@ -138,7 +169,7 @@ class PostsController < ApplicationController
 
       comment_id = "comment-#{@comment.id}"
 
-      div(class: "#{@depth > 0 ? 'ml-8' : ''} border-l-2 border-gray-200 pl-4") do
+      div(class: "#{@depth > 0 ? 'ml-8' : ''} border-l-2 border-gray-200 pl-4", id: comment_id) do
         div(class: "bg-gray-50 rounded-lg p-4") do
           # Header with user info, status badge, and actions
           div(class: "flex justify-between items-start") do
@@ -146,6 +177,10 @@ class PostsController < ApplicationController
               div(class: "text-sm text-gray-500") do
                 strong { @comment.user.name }
                 plain " · #{view_context.time_ago_in_words(@comment.created_at)} ago"
+                if @comment.edited_at
+                  plain " "
+                  span(class: "text-gray-400") { "(edited #{view_context.time_ago_in_words(@comment.edited_at)} ago)" }
+                end
               end
 
               # Status badge for admins
@@ -184,6 +219,14 @@ class PostsController < ApplicationController
                 end
               end
 
+              # Edit button (only for comment author or admin)
+              if @comment.editable_by?(view_context.current_user, is_admin: view_context.admin?)
+                button(
+                  class: "text-blue-600 text-sm hover:underline edit-comment",
+                  data: { comment_id: comment_id }
+                ) { "Edit" }
+              end
+
               # Delete with confirmation
               button(
                 class: "text-red-500 text-sm hover:underline delete-comment",
@@ -195,7 +238,17 @@ class PostsController < ApplicationController
             end
           end
 
-          p(class: "mt-2 text-gray-700") { @comment.body }
+          # Comment body (shown when not editing)
+          div(class: "comment-body-#{@comment.id}") do
+            p(class: "mt-2 text-gray-700") { @comment.body }
+          end
+
+          # Edit form (hidden by default)
+          div(class: "comment-edit-form-#{@comment.id}", style: "display: none;") do
+            div(class: "mt-2") do
+              render EditCommentForm.new(post: @post, comment: @comment)
+            end
+          end
 
           # Reply form (only for approved comments or admins, and if depth < 2)
           if (@comment.status == "approved" || view_context.admin?) && @depth < 2
