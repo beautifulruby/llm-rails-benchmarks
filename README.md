@@ -177,9 +177,125 @@ The efficiency hypothesis may apply more to **iterative development** where:
 
 ---
 
-## Experiment 2: Iterative Development (Planned)
+## Experiment 2: Iterative Development
 
-To test whether co-location helps with **modifying existing features**, not just building new ones.
+Testing whether co-location helps with **modifying existing features**.
+
+### Experiment 2A: Bug Fix (Turbo Stream Deletion)
+
+**Prompt:**
+```
+Bug report: When deleting a comment with replies, the replies remain visible
+until the page is refreshed. They should disappear immediately.
+
+Fix this bug. Add a test to prevent regression.
+```
+
+**Results:**
+
+| Metric | Vanilla | Phlex | Notes |
+|--------|---------|-------|-------|
+| Files read | 8 | 8 | Similar exploration needed |
+| Files modified | 2 | 3 | Phlex had JS in layout |
+| Lines added | +23 | +68 | Phlex added more tests |
+
+**Vanilla Fix:**
+- Modified `comments_controller.rb` destroy action
+- Added turbo_stream.remove response
+- 1 test added
+
+**Phlex Fix:**
+- Modified `comments_controller.rb` destroy action
+- Modified `application.html.erb` (JS for modal)
+- 2 tests added
+
+**Conclusion:** No significant difference. Both required reading the same types of files (controller, model, views/layout, tests). The Phlex "views in controller" didn't help because the JavaScript was still in a separate file (layout).
+
+### Experiment 2B: Feature Modification (Visibility Rules)
+
+**Prompt:**
+```
+Change the comment visibility rules:
+- Approved comments: visible to everyone
+- Pending comments: visible to admins AND the comment author
+- Rejected comments: visible only to admins
+
+Update tests accordingly.
+```
+
+**Results:**
+
+| Metric | Vanilla | Phlex | Ratio |
+|--------|---------|-------|-------|
+| Files read | 10 | 9 | -10% |
+| Files modified | 5 | 4 | -20% |
+| Lines added | +163 | +102 | -37% |
+| Lines deleted | -17 | -11 | — |
+| Net lines | +146 | +91 | **-38%** |
+
+**Vanilla Implementation:**
+- Modified: model, controller, view partial, 2 test files
+- Required understanding how visibility is checked in 3 locations
+
+**Phlex Implementation:**
+- Modified: model, controller (includes views), 2 test files
+- View logic co-located with controller, one less file to touch
+
+**Conclusion:** Phlex required **38% fewer lines** and **20% fewer files**. The co-located views made it easier to see all visibility-related code in one place. The controller file serves as a single source of truth for "how does this feature look and behave?"
+
+### Experiment 2C: UI Enhancement (Edit Comments)
+
+**Prompt:**
+```
+Add the ability to edit comments:
+- "Edit" button appears next to delete button
+- Clicking edit shows inline form (like reply form)
+- Only comment author can edit (and admins)
+- Edited comments show "(edited)" timestamp
+- Add tests
+
+Follow existing patterns.
+```
+
+**Results:**
+
+| Metric | Vanilla | Phlex | Ratio |
+|--------|---------|-------|-------|
+| Files read | 12 | 10 | -17% |
+| Files modified | 8 | 9 | +13% |
+| Lines added | +130 | +260 | **+100%** |
+| Net lines | +126 | +255 | **+102%** |
+
+**Vanilla Implementation:**
+- Migration + model + controller + view partial + JS + tests
+- Each layer has a dedicated file
+
+**Phlex Implementation:**
+- Same layers but views are inline in controller
+- More lines because Ruby DSL is more verbose than ERB
+- Added Phlex components: `EditCommentForm`, modified `CommentView`
+
+**Conclusion:** **Vanilla wins** for new UI features. The Phlex Ruby DSL for HTML is significantly more verbose than ERB templates. While co-location reduces file count, it increases total lines of code. For features that are primarily about UI (forms, buttons, styling), ERB's terseness is advantageous.
+
+---
+
+### Experiment 2 Summary
+
+| Experiment | Type | Winner | Ratio (lines) |
+|------------|------|--------|---------------|
+| 2A: Bug fix | Cross-cutting | Tie | 1.0x |
+| 2B: Feature mod | Logic change | **Phlex** | 0.62x |
+| 2C: UI enhancement | UI heavy | **Vanilla** | 0.49x |
+
+**Findings:**
+
+1. **Co-location wins for logic changes** (2B) - When modifying business rules that affect multiple layers (model, controller, view), having views inline reduces context switching.
+
+2. **ERB wins for UI-heavy features** (2C) - The Phlex Ruby DSL is ~2x more verbose than ERB for the same HTML output. For features that are primarily about adding UI elements, this verbosity hurts.
+
+3. **No difference for cross-cutting concerns** (2A) - When the fix requires touching files outside the co-located controller (JavaScript, layouts), the benefit disappears.
+
+**Recommendation:** The ideal architecture may be a hybrid - use Phlex for components with complex logic, ERB for simple templates with lots of markup.
 
 ## Running the Apps
 
