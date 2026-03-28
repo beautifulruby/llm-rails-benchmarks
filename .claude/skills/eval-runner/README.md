@@ -17,7 +17,7 @@ Run architecture benchmark evaluations with fresh AI contexts and aggregate resu
 2. **Spawns fresh agents** via CLI (`claude --print`) or Task tool
 3. **Captures metrics**: files read, files modified, lines changed, tokens
 4. **Stores results** in `evals/<experiment>/runs/<timestamp>_<app>.md`
-5. **Aggregates** into `evals/<experiment>/results.json`
+5. **Aggregates** into `evals/<experiment>/results.yml`
 
 ## Experiment Config
 
@@ -55,32 +55,34 @@ metrics:
 
 ## Results Schema
 
-```json
-{
-  "experiment": "exp1_greenfield",
-  "runs": [
-    {
-      "id": "2026-03-27_001",
-      "timestamp": "2026-03-27T14:30:00Z",
-      "model": "claude-3-opus",
-      "app": "vanilla",
-      "metrics": {
-        "files_read": 8,
-        "files_modified": 13,
-        "lines_added": 325,
-        "lines_deleted": 52,
-        "test_result": "pass",
-        "tokens_input": null,
-        "tokens_output": null
-      },
-      "notes": "Sub-agent via Task tool"
-    }
-  ],
-  "summary": {
-    "vanilla": { "mean_lines": 273, "std": 0, "n": 1 },
-    "phlex": { "mean_lines": 388, "std": 0, "n": 1 }
-  }
-}
+```yaml
+# evals/<experiment>/results.yml
+experiment: exp1_greenfield
+
+runs:
+  - id: 2026-03-27_001
+    timestamp: 2026-03-27T14:30:00Z
+    model: claude-3-opus
+    app: vanilla
+    metrics:
+      files_read: 8
+      files_modified: 13
+      lines_added: 325
+      lines_deleted: 52
+      test_result: pass
+      tokens_input: ~
+      tokens_output: ~
+    notes: Sub-agent via Task tool
+
+summary:
+  vanilla:
+    n: 1
+    mean_lines: 273
+    std: ~
+  phlex:
+    n: 1
+    mean_lines: 388
+    std: ~
 ```
 
 ## Fresh Context Options
