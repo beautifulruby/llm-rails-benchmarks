@@ -103,7 +103,3 @@ Want to run your own experiments? PRs welcome:
 5. Submit PR
 
 More data points make this more useful.
-
-## License
-
-MIT
