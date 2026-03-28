@@ -1,0 +1,34 @@
+name: Bug Fix (Turbo Stream Deletion)
+id: exp2a_bugfix
+
+hypothesis: |
+  Co-located views help with bug fixes because the AI can see
+  all relevant code in one file.
+
+setup:
+  checkout: post-greenfield
+
+apps:
+  - vanilla
+  - phlex
+
+prompt: |
+  Bug report: When deleting a comment with replies, the replies remain visible
+  until the page is refreshed. They should disappear immediately.
+
+  Fix this bug. Add a test to prevent regression.
+
+success_criteria:
+  - Bug is fixed (immediate DOM removal)
+  - Regression test added
+  - All existing tests pass
+
+metrics:
+  - files_read
+  - files_modified
+  - lines_added
+  - lines_deleted
+
+notes: |
+  This bug involves Turbo/JS integration, which is NOT co-located
+  in either architecture. Expect similar results.

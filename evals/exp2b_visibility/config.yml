@@ -1,0 +1,37 @@
+name: Logic Change (Visibility Rules)
+id: exp2b_visibility
+
+hypothesis: |
+  Co-located views help when modifying business logic that spans
+  model/controller/view because all relevant code is visible in fewer files.
+
+setup:
+  checkout: post-greenfield
+  # Note: Run after exp2a or reset to post-greenfield
+
+apps:
+  - vanilla
+  - phlex
+
+prompt: |
+  Change the comment visibility rules:
+  - Approved comments: visible to everyone
+  - Pending comments: visible to admins AND the comment author
+  - Rejected comments: visible only to admins
+
+  Update tests accordingly.
+
+success_criteria:
+  - Visibility rules implemented correctly
+  - Tests cover all cases
+  - All tests pass
+
+metrics:
+  - files_read
+  - files_modified
+  - lines_added
+  - lines_deleted
+
+notes: |
+  This change requires understanding model scopes, controller filtering,
+  AND view conditionals. Expect Phlex to perform better.

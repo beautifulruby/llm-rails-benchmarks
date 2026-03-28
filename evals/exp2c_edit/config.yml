@@ -1,0 +1,41 @@
+name: UI Enhancement (Edit Comments)
+id: exp2c_edit
+
+hypothesis: |
+  Co-located views help with UI-heavy features because the AI can
+  see existing patterns and add new UI elements in context.
+
+setup:
+  checkout: post-greenfield
+  # Run after exp2a/2b or reset
+
+apps:
+  - vanilla
+  - phlex
+
+prompt: |
+  Add the ability to edit comments:
+  - "Edit" button appears next to delete button
+  - Clicking edit shows inline form (like reply form)
+  - Only comment author can edit (and admins)
+  - Edited comments show "(edited)" timestamp
+  - Add tests
+
+  Follow existing patterns.
+
+success_criteria:
+  - Edit button visible to authorized users
+  - Inline form works
+  - edited_at timestamp saved and displayed
+  - Authorization enforced
+  - Tests pass
+
+metrics:
+  - files_read
+  - files_modified
+  - lines_added
+  - lines_deleted
+
+notes: |
+  UI-heavy feature. Expect Vanilla to win due to ERB being
+  more concise than Phlex DSL for HTML markup.

@@ -1,0 +1,37 @@
+name: Greenfield Feature Implementation
+id: exp1_greenfield
+
+hypothesis: |
+  Co-located views (Phlex in controller) require fewer files and tokens
+  for new feature implementation compared to traditional Rails (ERB).
+
+setup:
+  checkout: baseline
+
+apps:
+  - vanilla
+  - phlex
+
+prompt: |
+  Add comment moderation to this Rails app. Requirements:
+  1. Comments have status: pending (default), approved, rejected
+  2. Only approved comments visible to regular users
+  3. Admins see all comments with status badges
+  4. Approve/reject buttons for admins
+  5. Add tests
+
+  Follow existing patterns. Do not ask clarifying questions.
+
+success_criteria:
+  - All tests pass
+  - Moderation status column exists
+  - Approve/reject actions work
+  - Visibility filtering works
+
+metrics:
+  - files_read
+  - files_modified
+  - lines_added
+  - lines_deleted
+  - test_assertions
+  - tokens_estimated

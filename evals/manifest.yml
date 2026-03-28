@@ -1,0 +1,52 @@
+# Eval Manifest
+# Lists all experiments and their current status
+
+experiments:
+  exp1_greenfield:
+    name: Greenfield Feature Implementation
+    status: complete
+    runs: 1
+    winner: tie
+
+  exp2a_bugfix:
+    name: Bug Fix (Cross-cutting)
+    status: complete
+    runs: 1
+    winner: tie
+
+  exp2b_visibility:
+    name: Logic Change (Visibility Rules)
+    status: complete
+    runs: 1
+    winner: phlex
+    ratio: 0.62
+
+  exp2c_edit:
+    name: UI Enhancement (Edit Feature)
+    status: complete
+    runs: 1
+    winner: vanilla
+    ratio: 0.49
+
+planned:
+  exp3_refactor:
+    name: Refactoring (Extract Service)
+    status: planned
+    hypothesis: Co-location makes refactoring harder (large files)
+
+  exp4_n10:
+    name: Re-run Exp 2B with N=10
+    status: planned
+    hypothesis: Confirm Phlex advantage with statistical significance
+
+  exp5_gpt4:
+    name: Run all experiments with GPT-4
+    status: planned
+    hypothesis: Results may differ by model
+
+defaults:
+  model: claude-3-opus
+  runs_per_experiment: 1
+  apps:
+    - vanilla
+    - phlex
