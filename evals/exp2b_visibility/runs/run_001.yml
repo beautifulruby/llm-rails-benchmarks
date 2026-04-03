@@ -1,0 +1,19 @@
+run: 1
+timestamp: 2026-03-28T00:01:00Z
+method: sub-agent
+
+vanilla:
+  files_read: 9
+  files_modified: 5
+  lines_added: 159
+  lines_deleted: 21
+  net_lines: 138
+  test_result: pass
+
+phlex:
+  files_read: 8
+  files_modified: 4
+  lines_added: 97
+  lines_deleted: 15
+  net_lines: 82
+  test_result: pass
